@@ -1,0 +1,74 @@
+# Design Notes (for the report and for presentation Q&A)
+
+## 1. Architecture overview
+
+Three clear layers, so the rules can be tested without opening a window:
+
+| Layer | Packages | Responsibility | Depends on GUI? |
+|---|---|---|---|
+| Data / rules | `model.*`, `data` | Dragons, moves, passives, items, fields, players, profile, saving, egg gacha, coin packs | No |
+| Engine | `battle`, `bot` | `BattleEngine` is a state machine that returns a list of `BattleEvent`s; bots decide through `BotStrategy` | No |
+| Presentation | `gui`, `app` | Swing plays the `BattleEvent`s one by one as animations | n/a |
+
+The GUI never computes rules. The player presses a button, `BattleSession.playerAction(...)` returns a
+`List<BattleEvent>`, and `BattlePanel` plays them one at a time (typewriter text, HP bar tween, sounds). Then the bot
+moves via `advanceBot()`.
+
+## 2. OOP against the grading rubric
+
+### Inheritance (6)
+| Example | Explanation |
+|---|---|
+| `Item` (abstract) -> `HealItem`, `ReloadItem`, `BuffItem`, `CleanseItem` | The base stores name and description; each child defines the effect of `use()` |
+| `Player` -> `BotPlayer` | A bot *is* a player that decides with a `BotStrategy`; it overrides `isTimed()` (bots have no clock) and `isBot()` |
+| `AbstractPassive` -> `Passives.DodgeUp`, `ReflectDamage`, `Conductor` ... (20 classes) | The base stores name, description and strength (Titan Wing x1.5); children override only the hooks they need |
+| `ScreenPanel` -> `MenuPanel`, `EggPanel`, `TopUpPanel`, `CollectionPanel`, `TeamSelectPanel`, `FieldSelectPanel`, `BattlePanel`, `HowToPanel` | The base provides background, header, `onShow()` and `onHide()` |
+
+### Interface (3)
+| Interface | Implemented by | Why |
+|---|---|---|
+| `MoveEffect` | `PierceEffect`, `CritEffect`, `MultiHitEffect`, `SureHitEffect`, `DotEffect`, `StatDebuffEffect`, `SelfBuffEffect`, `HealSelfEffect`, `DodgeBuffEffect` | One move can combine several effects (`BURN:6:2+ATK_DOWN:15`) and the engine need not know each kind |
+| `PassiveSkill` | `AbstractPassive` and children | Hooks such as `dodgeBonus`, `onDamaged`, `extraEffects` |
+| `BotStrategy` | `RandomBotStrategy`, `GreedyBotStrategy`, `SmartBotStrategy` | Strategy pattern: difficulty changes by swapping the object |
+| `TimeSource` | `TimeSource.system()` and `FakeTime` in tests | Lets the clock be tested without waiting |
+| `BattleAction` (sealed) | `Attack`, `UseItem`, `Rest` (records) | Pattern-matching `switch` is exhaustive and checked by the compiler |
+
+### Polymorphism (6)
+- `item.use(target, log)`: the caller is identical, but the behavior (heal, reload, buff, cleanse) depends on the real type.
+- `strategy.chooseAction(engine, side, random)`: the three bot levels decide differently.
+- `effect.modifyAttack(ctx)` / `effect.onUse(ctx)`: called on every effect of a move through `List<MoveEffect>`.
+- `passive.dodgeBonus(...)`, `passive.onMoveUsed(...)` and so on: the engine calls one interface.
+- `player.isTimed()`: `Player` returns true and `BotPlayer` returns false, so only humans are timed.
+- `screen.onShow()` / `onHide()`: `GameWindow` calls them on every screen through the `ScreenPanel` type.
+
+### Access modifiers (2)
+- All fields are `private` and exposed through getters. `Combatant.getCurrentHp()` is read-only; HP changes only through the bounds-checked `takeDamage` / `heal`.
+- `Profile.addCoins(int)` is the only way to add coins; it rejects zero or negative amounts and clamps at `GameRules.MAX_COINS`.
+- `protected` constructors in `Item` / `AbstractPassive`, and `getStrength()`, are for subclasses only.
+- Package-private: `BotSupport` is used only inside the `bot` package.
+- `final` / immutable: `DragonSpecies`, `Move`, `BattleEvent` (record) cannot change after creation.
+
+## 3. Design patterns (good for the presentation)
+
+Strategy (`BotStrategy`, `MoveEffect`, `PassiveSkill`), Factory (`EffectFactory`, `PassiveFactory`, `BotFactory`, `ItemType.create`),
+State machine (`BattleEngine.Phase`), light Observer-style event feed (`BattleEvent`s to the GUI), immutable value objects (`MatchSetup`, `BattleEvent`).
+`CoinPack` is an enum with behavior: each constant knows its coin amount and how to claim itself on a `Profile`.
+
+## 4. Decisions to tell the instructor
+
+- **Type chart**: the HTTYD wiki has no official type chart, so I designed a balanced cycle (every class beats 2 and loses to 2) in the `TypeChart` class. It can be edited in one place.
+- **Source data**: Speed Stinger has Shot_Limit = 0 in the sheet but also has a Signature move, so it was changed to 4 in `dragons.csv`.
+- **HP x3**: in-game HP is the base value x 3 (`GameRules.HP_SCALE`) so matches last long enough (12,000 simulated matches averaged about 22 actions).
+- **Swing instead of JavaFX**: `java -jar` works on any machine without extra modules.
+- **Java 21 bytecode** (`options.release = 21`) even though the build uses JDK 25, so the jar runs on JDK 21.
+- **Art and sound**: placeholders generated by code (pixel art and chiptune). They can be replaced by real files as described in the README.
+- **Bot instead of PvP**: as agreed. `BattleEngine` treats both sides equally, so PvP can be added later.
+- **Free coin shop**: a demo feature only. No payment, network or account code exists; the coin balance is capped at 999,999.
+
+## 5. Testing
+
+JUnit 5, 151 tests in 21 test classes: damage formula, type chart, clocks, statuses and buffs, the engine (KO, timeout, forfeit,
+140-action limit, draw), items, effects and passives, the egg gacha, profile and fusion, coin packs and `addCoins`
+(rejects bad amounts, cap at the maximum, top-up makes eggs affordable again), save and load, every bot level,
+GUI helpers (text wrapping, images, message box), and `FullMatchSimulationTest`, which plays full matches
+(3 difficulties x 40 seeds) with random legal actions and checks that the game never hangs and always ends with a result.

@@ -1,0 +1,11 @@
+httyd.app
+httyd.battle
+httyd.bot
+httyd.data
+httyd.gui
+httyd.model
+httyd.model.dragon
+httyd.model.field
+httyd.model.item
+httyd.model.player
+httyd.model.skill
