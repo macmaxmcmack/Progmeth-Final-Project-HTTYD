@@ -1,12 +1,14 @@
 package httyd.app;
 
-import httyd.gui.GameContext;
-import httyd.gui.GameWindow;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import httyd.fx.FxApp;
+import javafx.application.Application;
 
 /**
  * Entry point of the game "HTTYD Dragon Battle".
+ *
+ * <p>This class deliberately does <em>not</em> extend {@link Application}: when the main class of a jar
+ * extends Application, {@code java -jar} fails with "JavaFX runtime components are missing". The real
+ * application class is {@link FxApp}.
  */
 public final class Main {
 
@@ -14,20 +16,11 @@ public final class Main {
     }
 
     /**
-     * Starts the game window.
+     * Starts the JavaFX application.
      *
-     * @param args ignored
+     * @param args {@code --smoke} opens the window, takes a snapshot and exits (used by the automatic tests)
      */
     public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (Exception ignored) {
-            // the default look is fine too
-        }
-        SwingUtilities.invokeLater(() -> {
-            GameContext context = GameContext.createDefault();
-            GameWindow window = new GameWindow(context);
-            window.setVisible(true);
-        });
+        Application.launch(FxApp.class, args);
     }
 }
