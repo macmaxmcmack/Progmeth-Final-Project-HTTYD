@@ -1,0 +1,18 @@
+/* Global look of the JavaFX screens. Colours and shapes of buttons and panels are set in RetroButton / RetroPanel. */
+.button {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-cursor: hand;
+}
+
+.button:disabled {
+    -fx-opacity: 1;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}

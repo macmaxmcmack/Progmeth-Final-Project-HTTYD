@@ -19,8 +19,20 @@ val fxModules = listOf("base", "graphics", "controls")
 val fxJarPlatforms = listOf("mac-aarch64", "win", "linux")
 val fxAllPlatforms: Configuration by configurations.creating
 
+// Classifier of the machine that is running Gradle, e.g. "mac-aarch64" on an Apple Silicon Mac.
+// (The JavaFX artifact without a classifier is an empty stub, so the platform must be named explicitly.)
+val fxCurrentPlatform: String = run {
+    val os = System.getProperty("os.name").lowercase()
+    val arm = System.getProperty("os.arch").lowercase().let { it == "aarch64" || it == "arm64" }
+    when {
+        os.contains("mac") -> if (arm) "mac-aarch64" else "mac"
+        os.contains("win") -> "win"
+        else -> if (arm) "linux-aarch64" else "linux"
+    }
+}
+
 dependencies {
-    fxModules.forEach { module -> implementation("org.openjfx:javafx-$module:$fxVersion") }
+    fxModules.forEach { module -> implementation("org.openjfx:javafx-$module:$fxVersion:$fxCurrentPlatform") }
     fxJarPlatforms.forEach { platform ->
         fxModules.forEach { module -> fxAllPlatforms("org.openjfx:javafx-$module:$fxVersion:$platform") }
     }
@@ -37,6 +49,8 @@ java {
 
 application {
     mainClass = "httyd.app.Main"
+    // JavaFX loads native libraries; newer JDKs print a warning unless this is allowed explicitly
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -48,7 +62,6 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.test {
     useJUnitPlatform()
-    systemProperty("java.awt.headless", "true")
     testLogging {
         events("passed", "skipped", "failed")
     }
@@ -60,6 +73,7 @@ tasks.jar {
     archiveVersion = ""
     manifest {
         attributes["Main-Class"] = "httyd.app.Main"
+        attributes["Enable-Native-Access"] = "ALL-UNNAMED"
     }
     // Fat jar: our classes + JavaFX for every platform (see above)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -69,13 +83,6 @@ tasks.jar {
             .map { zipTree(it) }
     })
     exclude("module-info.class", "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
-}
-
-// The old Swing version, kept until the JavaFX port is finished: ./gradlew runSwing
-tasks.register<JavaExec>("runSwing") {
-    group = "application"
-    mainClass = "httyd.app.SwingMain"
-    classpath = sourceSets.main.get().runtimeClasspath
 }
 
 // `./gradlew javadoc` -> build/docs/javadoc/index.html

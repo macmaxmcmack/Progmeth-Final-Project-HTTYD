@@ -18,8 +18,8 @@ GitHub Actions builds, tests and smoke-runs the jar on Windows and macOS for eve
 ## Steps
 | # | Step | Status |
 |---|---|---|
-| 1 | Build setup, `Main` launcher, `FxApp` empty window, fat jar, CI | done, waiting for a run on the Mac |
-| 2 | Theme/font/CSS, picture factories (`PixelWriter`), `ScreenPanel`, `GameWindow`, menu | todo |
+| 1 | Build setup, `Main` launcher, `FxApp` empty window, fat jar, CI | done, verified on the Mac |
+| 2 | Theme/font/CSS, picture factories (`Raster` + `PixelWriter`), `ScreenPane`, `GameWindow`, menu | written, waiting for a run on the Mac |
 | 3 | Egg, top up, collection, team, fields, how to play | todo |
 | 4 | Battle screen and arena | todo |
 | 5 | Tests, remove the Swing code, jar check, README / manual / UML / JavaDoc / screenshots | todo |
