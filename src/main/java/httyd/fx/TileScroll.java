@@ -2,6 +2,7 @@ package httyd.fx;
 
 import java.util.List;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.GridPane;
 
@@ -28,7 +29,7 @@ final class TileScroll extends ScrollPane {
         getStyleClass().add("tile-scroll");
     }
 
-    void setTiles(List<DragonTile> tiles) {
+    void setTiles(List<? extends Node> tiles) {
         grid.getChildren().clear();
         for (int i = 0; i < tiles.size(); i++) {
             grid.add(tiles.get(i), i % COLUMNS, i / COLUMNS);

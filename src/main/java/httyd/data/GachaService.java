@@ -5,7 +5,9 @@ import httyd.model.dragon.DragonSpecies;
 import httyd.model.dragon.Nature;
 import httyd.model.dragon.OwnedDragon;
 import httyd.model.dragon.Tier;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -26,24 +28,54 @@ public class GachaService {
     }
 
     /**
-     * Picks a species. The chance of a species is its tier weight divided by the number of
-     * species of that tier, so a tier is as common as its weight says.
+     * Works out the relative weight of every species. The weight of a species is its tier weight
+     * divided by the number of species of that tier, so a tier is as common as its weight says.
+     */
+    private double[] weights(int rarityPercent) {
+        List<DragonSpecies> all = repository.all();
+        double[] weights = new double[all.size()];
+        for (int i = 0; i < all.size(); i++) {
+            Tier tier = all.get(i).getTier();
+            long sameTier = all.stream().filter(s -> s.getTier() == tier).count();
+            double weight = tier.getDropWeight() / (double) sameTier;
+            boolean rare = tier == Tier.S || tier == Tier.A;
+            weights[i] = weight * (rare ? rarityPercent / 100.0 : 100.0 / rarityPercent);
+        }
+        return weights;
+    }
+
+    /**
+     * Gives the chance of every species in a normal egg. These are the same numbers that
+     * {@link #pickSpecies(int)} uses, so what the player reads is what the egg does.
+     *
+     * @return the chance of each species as a fraction (all values add up to 1), in repository order
+     */
+    public Map<DragonSpecies, Double> odds() {
+        double[] weights = weights(100);
+        double total = 0;
+        for (double w : weights) {
+            total += w;
+        }
+        Map<DragonSpecies, Double> result = new LinkedHashMap<>();
+        List<DragonSpecies> all = repository.all();
+        for (int i = 0; i < all.size(); i++) {
+            result.put(all.get(i), weights[i] / total);
+        }
+        return result;
+    }
+
+    /**
+     * Picks a species.
      *
      * @param rarityPercent 100 for normal rates; above 100 favours S and A tiers, below 100 favours B and C
      * @return the species
      */
     public DragonSpecies pickSpecies(int rarityPercent) {
         List<DragonSpecies> all = repository.all();
-        double[] weights = new double[all.size()];
+        double[] weights = weights(rarityPercent);
         double total = 0;
-        for (int i = 0; i < all.size(); i++) {
-            Tier tier = all.get(i).getTier();
-            long sameTier = all.stream().filter(s -> s.getTier() == tier).count();
-            double weight = tier.getDropWeight() / (double) sameTier;
-            boolean rare = tier == Tier.S || tier == Tier.A;
-            weight *= rare ? rarityPercent / 100.0 : 100.0 / rarityPercent;
-            weights[i] = weight;
-            total += weight;
+        for (double w : weights) {
+            total += w;
         }
         double roll = random.nextDouble() * total;
         for (int i = 0; i < weights.length; i++) {

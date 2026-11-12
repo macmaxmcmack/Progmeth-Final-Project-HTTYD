@@ -42,6 +42,8 @@ public final class GameRules {
     public static final int TERRAIN_SHIFT_TURNS = 2;
     /** Price of one dragon egg in coins. */
     public static final int EGG_PRICE = 50;
+    /** Number of eggs opened by one "open several" press. */
+    public static final int MULTI_EGG_COUNT = 5;
     /** The most coins a player can hold. */
     public static final int MAX_COINS = 999_999;
     /** Chance of an Alpha (shiny) dragon, in percent. */

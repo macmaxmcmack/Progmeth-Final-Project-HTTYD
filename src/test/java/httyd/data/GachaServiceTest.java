@@ -94,4 +94,35 @@ class GachaServiceTest {
         DragonSpecies skrill = repo.byId("skrill");
         assertEquals(skrill, gacha.rollDragon(5, skrill).getSpecies());
     }
+
+    @Test
+    void oddsAddUpToOneAndFollowTheTierWeights() {
+        java.util.Map<DragonSpecies, Double> odds = gacha.odds();
+        assertEquals(repo.all().size(), odds.size());
+        double total = 0;
+        java.util.Map<Tier, Double> perTier = new java.util.EnumMap<>(Tier.class);
+        for (java.util.Map.Entry<DragonSpecies, Double> e : odds.entrySet()) {
+            total += e.getValue();
+            perTier.merge(e.getKey().getTier(), e.getValue(), Double::sum);
+        }
+        assertEquals(1.0, total, 1e-9);
+        double weightSum = 0;
+        for (Tier t : perTier.keySet()) {
+            weightSum += t.getDropWeight();
+        }
+        for (Tier t : perTier.keySet()) {
+            assertEquals(t.getDropWeight() / weightSum, perTier.get(t), 1e-9);
+        }
+    }
+
+    @Test
+    void speciesOfTheSameTierHaveTheSameChance() {
+        java.util.Map<Tier, Double> seen = new java.util.EnumMap<>(Tier.class);
+        for (java.util.Map.Entry<DragonSpecies, Double> e : gacha.odds().entrySet()) {
+            Double first = seen.putIfAbsent(e.getKey().getTier(), e.getValue());
+            if (first != null) {
+                assertEquals(first, e.getValue(), 1e-12);
+            }
+        }
+    }
 }

@@ -70,6 +70,9 @@ public final class GameWindow {
         register("collection", new CollectionScreen(this, context));
         register("team", new TeamSelectScreen(this, context));
         register("field", new FieldSelectScreen(this, context));
+        register("dex", new DexScreen(this, context, "All Dragons", "Every dragon in the game. Click one for details.",
+                "Collection", this::showCollection));
+        register("odds", new DexScreen(this, context, "Drop Rates", null, "Back to Eggs", this::showEgg));
         register("battle", new BattleScreen(this, context));
         register("topup", new TopUpScreen(this, context));
         register("howto", new HowToScreen(this, context));
@@ -112,6 +115,16 @@ public final class GameWindow {
     /** Shows the egg hatching screen. */
     public void showEgg() {
         show("egg");
+    }
+
+    /** Shows the index of every dragon in the game. */
+    public void showDex() {
+        show("dex");
+    }
+
+    /** Shows the drop rates of the egg. */
+    public void showOdds() {
+        show("odds");
     }
 
     /** Shows the collection screen. */

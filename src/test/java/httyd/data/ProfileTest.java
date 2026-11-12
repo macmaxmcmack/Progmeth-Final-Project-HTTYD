@@ -52,6 +52,27 @@ class ProfileTest {
     }
 
     @Test
+    void buyingSeveralEggsCostsTheSumAndAddsEveryDragon() {
+        profile.setCoins(1000);
+        int before = profile.getDragons().size();
+        java.util.List<OwnedDragon> hatched = profile.buyEggs(gacha, GameRules.MULTI_EGG_COUNT);
+        assertEquals(GameRules.MULTI_EGG_COUNT, hatched.size());
+        assertEquals(1000 - GameRules.EGG_PRICE * GameRules.MULTI_EGG_COUNT, profile.getCoins());
+        assertEquals(before + GameRules.MULTI_EGG_COUNT, profile.getDragons().size());
+        assertEquals(GameRules.MULTI_EGG_COUNT, hatched.stream().map(OwnedDragon::getId).distinct().count());
+    }
+
+    @Test
+    void buyingSeveralEggsIsAllOrNothing() {
+        profile.setCoins(GameRules.EGG_PRICE * 5 - 1);
+        int before = profile.getDragons().size();
+        assertFalse(profile.canAffordEggs(5));
+        assertThrows(IllegalStateException.class, () -> profile.buyEggs(gacha, 5));
+        assertEquals(GameRules.EGG_PRICE * 5 - 1, profile.getCoins());
+        assertEquals(before, profile.getDragons().size());
+    }
+
+    @Test
     void idsNeverRepeat() {
         profile.setCoins(1000);
         int a = profile.buyEgg(gacha).getId();

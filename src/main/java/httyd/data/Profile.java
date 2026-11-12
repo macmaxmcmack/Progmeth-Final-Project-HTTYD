@@ -159,6 +159,37 @@ public class Profile {
     }
 
     /**
+     * @param count how many eggs
+     * @return true if the player can pay for that many eggs at once
+     */
+    public boolean canAffordEggs(int count) {
+        return count > 0 && coins >= (long) GameRules.EGG_PRICE * count;
+    }
+
+    /**
+     * Pays for several eggs at once and adds all the dragons that hatch. Either all of them are
+     * bought or none (when the coins are not enough).
+     *
+     * @param gacha the egg service
+     * @param count how many eggs to open
+     * @return the new dragons, in the order they hatched
+     * @throws IllegalStateException if the player has too few coins
+     */
+    public List<OwnedDragon> buyEggs(GachaService gacha, int count) {
+        if (!canAffordEggs(count)) {
+            throw new IllegalStateException("not enough coins");
+        }
+        coins -= GameRules.EGG_PRICE * count;
+        List<OwnedDragon> hatched = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            OwnedDragon dragon = gacha.rollDragon(nextId++);
+            dragons.add(dragon);
+            hatched.add(dragon);
+        }
+        return hatched;
+    }
+
+    /**
      * Checks whether a duplicate can be fused into a dragon.
      *
      * @param targetId the dragon that gets the star

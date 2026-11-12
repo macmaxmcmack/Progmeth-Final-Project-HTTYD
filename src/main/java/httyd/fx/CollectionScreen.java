@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /**
@@ -35,7 +37,20 @@ public class CollectionScreen extends ScreenPane {
 
         infoLabel.setTextFill(Theme.PAPER);
         infoLabel.setFont(Theme.font(15, false));
-        VBox left = new VBox(8, infoLabel, scroll);
+        RetroButton dexButton = new RetroButton("All Dragons", Theme.ACCENT_2);
+        dexButton.setFont(Theme.font(14, true));
+        dexButton.setFixedSize(150, 38);
+        dexButton.setOnAction(e -> {
+            context.getSound().play(SoundPlayer.Sound.CLICK);
+            window.showDex();
+        });
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox infoRow = new HBox(infoLabel, spacer, dexButton);
+        infoRow.setAlignment(Pos.CENTER_LEFT);
+        infoLabel.setWrapText(true);
+        infoLabel.setMaxWidth(330);
+        VBox left = new VBox(8, infoRow, scroll);
         VBox.setVgrow(scroll, Priority.ALWAYS);
         HBox.setHgrow(left, Priority.ALWAYS);
 
